@@ -17,9 +17,20 @@ jobs:
 
       - name: Write service account key
         run: |
-          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT is empty"
+            exit 1
           fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
+
+      - name: Verify service account file
+        run: |
+          if [ ! -f service-account.json ]; then
+            echo "service-account.json not found"
+            exit 1
+          fi
+          ls -l service-account.json
+          head -n 5 service-account.json
 
       - name: Install and run admin init
         env:
