@@ -1,0 +1,13 @@
+{
+  "name": "set-super-manager",
+  "version": "1.0.0",
+  "description": "Cloud Function to securely assign the super_manager custom claim and write audit logs.",
+  "main": "index.js",
+  "engines": {
+    "node": "18"
+  },
+  "dependencies": {
+    "firebase-admin": "^11.10.0",
+    "firebase-functions": "^4.4.0"
+  }
+}

@@ -1,0 +1,37 @@
+name: Run Admin Initialize Owner
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  initialize-owner:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Write service account key
+        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
+
+      - name: Install and run admin init
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service-account.json
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          cd functions/admin_set_super_manager
+          npm ci
+          npm run verify-auth
+          npm run check-firestore || true
+          npm run initialize-owner
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f service-account.json

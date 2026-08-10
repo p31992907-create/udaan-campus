@@ -1,0 +1,16 @@
+{
+  "name": "udaan-rules-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "mocha --timeout 20000"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.2",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.2.0"
+  }
+}

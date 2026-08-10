@@ -1,0 +1,14 @@
+{
+  "name": "admin-set-super-manager",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "verify-auth": "node verify_auth.js",
+    "initialize-owner": "node initialize_owner.js",
+    "verify-claim": "node verify_owner_claim.js",
+    "check-firestore": "node debug_firestore.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.2.0"
+  }
+}

@@ -1,0 +1,50 @@
+name: Deploy setSuperManager Function
+
+on:
+  workflow_dispatch:
+    inputs:
+      targetEmail:
+        description: 'Email to set as super_manager'
+        required: true
+      adminSecret:
+        description: 'Admin secret to set in functions config (optional)'
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install Firebase Tools
+        run: npm install -g firebase-tools
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - name: Configure Firebase project
+        run: |
+          echo "$FIREBASE_PROJECT_ID"
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+      - name: Deploy Function
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud-key.json
+        run: |
+          # write service account key for firebase-tools if provided
+          if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ]; then
+            echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > ${GOOGLE_APPLICATION_CREDENTIALS}
+          fi
+          if [ -n "${{ inputs.adminSecret }}" ]; then
+            firebase functions:config:set supermanager.admin_secret="${{ inputs.adminSecret }}" --project ${{ secrets.FIREBASE_PROJECT_ID }}
+          fi
+          cd functions/set_super_manager || exit 0
+          npm ci
+          cd -
+          firebase deploy --only functions:setSuperManager --project ${{ secrets.FIREBASE_PROJECT_ID }}
+      - name: Invoke setSuperManager (best-effort)
+        run: |
+          echo "After deploy, manually invoke the function or add an invoke step here when a public URL is known."

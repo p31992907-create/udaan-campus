@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "103234236426",
+    "project_id": "udaan-campus",
+    "storage_bucket": "udaan-campus.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:103234236426:android:bc3b9df1918307b7ccaff3",
+        "android_client_info": {
+          "package_name": "com.udaanacademy.udaancampus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAg1OslFgbK-yrdbQrpc84TFcVOcWcBKQo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

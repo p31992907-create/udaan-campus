@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getRoleFromClaims() {
+      return request.auth.token.role != null ? request.auth.token.role : '';
+    }
+
+    function isSuperManager() {
+      return getRoleFromClaims() == 'super_manager';
+    }
+
+    function isManager() {
+      return isSuperManager() || getRoleFromClaims() == 'manager';
+    }
+
+    function isTeacher() {
+      return isSuperManager() || isManager() || getRoleFromClaims() == 'teacher';
+    }
+
+    // Users collection: only backend/admin (super_manager) may change roles and sensitive fields
+    match /users/{userId} {
+      allow read: if isSignedIn() && (
+        // users can read their own profile
+        request.auth.uid == userId ||
+        // managers and above can read other profiles
+        isManager()
+      );
+
+      allow create: if isSignedIn() && (
+        // creation can be done by managers or server processes (or by auth triggers)
+        isManager() || request.auth.uid == userId
+      );
+
+      allow update: if isSignedIn() && (
+        // Prevent client-side role escalation: only super_manager (trusted) can change 'role' or 'normalizedRole'
+        (isSuperManager()) ||
+        // Protect the immutable primary owner UID: only super_manager or backend service may modify owner account
+        (
+          // allow user to update their own non-role fields
+          request.auth.uid == userId
+          && !(request.resource.data.keys().hasAny(['role','normalizedRole']) && request.resource.data.diff(resource.data).affectedKeys().hasAny(['role','normalizedRole']))
+          // additionally, if this user is the configured primary owner, disallow self-update of owner-sensitive fields
+          && !(userId == get(/databases/$(database)/documents/config/primary_owner).data.uid && request.resource.data.diff(resource.data).affectedKeys().size() > 0)
+        )
+      );
+
+      allow delete: if isSignedIn() && isSuperManager();
+    }
+
+    // Attendance: managers and teachers for assigned classes, students/parents for own data
+    match /attendance/{docId} {
+      allow read: if isSignedIn() && (
+        isSuperManager() || isManager() || isTeacher() || request.auth.uid == resource.data.markedBy || request.auth.uid == resource.data.studentId
+      );
+      allow write: if isSignedIn() && (
+        isSuperManager() || isManager() || isTeacher()
+      );
+    }
+
+    // Homework: published visible to students/parents; creation/moderation by teacher/manager/super
+    match /homework/{homeworkId} {
+      allow read: if isSignedIn() && (
+        resource.data.status == 'PUBLISHED' || isSuperManager() || isManager() || isTeacher() || request.auth.uid == resource.data.teacherId
+      );
+      allow create: if isSignedIn() && (isTeacher() || isManager() || isSuperManager());
+      allow update: if isSignedIn() && (isSuperManager() || isManager() || isTeacher());
+      allow delete: if isSignedIn() && isSuperManager();
+    }
+
+    // Tests/results, calling_logs, audit_logs etc.
+    match /{document=**} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // Audit logs should be write-only by backend: clients cannot write or delete
+    match /audit_logs/{auditId} {
+      allow read: if isSignedIn() && isSuperManager();
+      allow create: if request.auth.token.admin == true; // only trusted backend service accounts
+      allow update, delete: if false;
+    }
+  }
+}
