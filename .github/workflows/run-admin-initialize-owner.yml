@@ -16,14 +16,16 @@ jobs:
           node-version: '18'
 
       - name: Write service account key
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
         run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
+          fi
 
       - name: Install and run admin init
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service-account.json
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           cd functions/admin_set_super_manager
           npm ci
