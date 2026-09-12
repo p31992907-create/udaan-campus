@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:udaan_campus/models/test_model.dart';
 import 'package:udaan_campus/services/auth_provider.dart';
+import 'package:udaan_campus/models/user_role.dart';
 import 'package:udaan_campus/services/attendance_service.dart';
 import 'package:udaan_campus/services/exam_service.dart';
 import 'package:udaan_campus/features/school/exams/test_result_entry_screen.dart';
@@ -28,6 +29,7 @@ class _TestManagementScreenState extends State<TestManagementScreen> {
   List<String> _classSectionOptions = [];
   List<TestModel> _tests = [];
   String? _error;
+  bool _isFinalExam = false;
 
   @override
   void initState() {
@@ -142,6 +144,12 @@ class _TestManagementScreenState extends State<TestManagementScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final user = auth.user;
     if (user == null) return;
+    if (_isFinalExam && user.role != UserRole.superManager) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Only the super manager can publish final exam marks.')),
+      );
+      return;
+    }
 
     final parts = _selectedClassSection!.split('-');
     if (parts.length != 2) return;
@@ -161,6 +169,7 @@ class _TestManagementScreenState extends State<TestManagementScreen> {
       createdBy: user.uid,
       teacherName: user.displayName.isNotEmpty ? user.displayName : user.email,
       createdAt: DateTime.now(),
+      isFinalExam: _isFinalExam,
     );
 
     setState(() {
@@ -191,6 +200,7 @@ class _TestManagementScreenState extends State<TestManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
     return Scaffold(
       appBar: AppBar(title: const Text('Assessment Management')),
       body: Padding(
@@ -265,6 +275,14 @@ class _TestManagementScreenState extends State<TestManagementScreen> {
                       ),
                     ],
                   ),
+                  if (user?.role == UserRole.superManager)
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Final / Yearly Exam'),
+                      subtitle: const Text('Enables class position after all students receive final marks.'),
+                      value: _isFinalExam,
+                      onChanged: (value) => setState(() => _isFinalExam = value),
+                    ),
                   const SizedBox(height: 14),
                   ElevatedButton(
                     onPressed: _saving ? null : _publishTest,

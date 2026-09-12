@@ -140,4 +140,18 @@ class ExamService {
     results.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return results;
   }
+
+  Future<List<TestResultModel>> fetchResultsForClassSection({
+    required String classId,
+    required String section,
+  }) async {
+    final query = await testResults
+        .where('classId', isEqualTo: classId)
+        .where('section', isEqualTo: section)
+        .get();
+    return query.docs
+        .map((doc) => TestResultModel.fromJson(doc.data()))
+        .where((result) => result.isFinalExam)
+        .toList();
+  }
 }

@@ -11,6 +11,7 @@ class TestModel {
   final String createdBy;
   final String teacherName;
   final DateTime createdAt;
+  final bool isFinalExam;
 
   TestModel({
     required this.testId,
@@ -23,6 +24,7 @@ class TestModel {
     required this.createdBy,
     required this.teacherName,
     required this.createdAt,
+    this.isFinalExam = false,
   });
 
   factory TestModel.fromJson(Map<String, dynamic> json) {
@@ -39,6 +41,7 @@ class TestModel {
       createdAt: json['createdAt'] != null
           ? (json['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
+      isFinalExam: json['isFinalExam'] == true,
     );
   }
 
@@ -54,6 +57,7 @@ class TestModel {
       'createdBy': createdBy,
       'teacherName': teacherName,
       'createdAt': Timestamp.fromDate(createdAt),
+      'isFinalExam': isFinalExam,
     };
   }
 }

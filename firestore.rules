@@ -73,6 +73,36 @@ service cloud.firestore {
       allow delete: if isSignedIn() && isSuperManager();
     }
 
+    // Student and class data used by attendance and marksheet screens.
+    match /students/{studentId} {
+      allow read: if isSignedIn() && (
+        isSuperManager() || isManager() || isTeacher() ||
+        request.auth.uid == resource.data.uid ||
+        request.auth.token.email == resource.data.email
+      );
+      allow create, update: if isSignedIn() && (isSuperManager() || isManager() || isTeacher());
+      allow delete: if isSignedIn() && isSuperManager();
+    }
+
+    match /classes/{classId} {
+      allow read: if isSignedIn() && (isSuperManager() || isManager() || isTeacher());
+      allow write: if isSignedIn() && (isSuperManager() || isManager());
+    }
+
+    match /tests/{testId} {
+      allow read: if isSignedIn() && (isSuperManager() || isManager() || isTeacher());
+      allow write: if isSignedIn() && (isSuperManager() || isManager() || isTeacher());
+    }
+
+    match /test_results/{resultId} {
+      allow read: if isSignedIn() && (
+        isSuperManager() || isManager() || isTeacher() ||
+        request.auth.uid == resource.data.studentId
+      );
+      allow create, update: if isSignedIn() && isSuperManager();
+      allow delete: if isSignedIn() && isSuperManager();
+    }
+
     // Tests/results, calling_logs, audit_logs etc.
     match /{document=**} {
       allow read: if false;

@@ -6,6 +6,7 @@ import 'package:udaan_campus/models/student.dart';
 import 'package:udaan_campus/services/attendance_service.dart';
 import 'package:udaan_campus/services/exam_service.dart';
 import 'package:udaan_campus/services/auth_provider.dart';
+import 'package:udaan_campus/models/user_role.dart';
 
 class TestResultEntryScreen extends StatefulWidget {
   const TestResultEntryScreen({super.key, required this.test});
@@ -75,6 +76,10 @@ class _TestResultEntryScreenState extends State<TestResultEntryScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final user = auth.user;
     if (user == null) return;
+    if (user.role != UserRole.superManager) {
+      setState(() => _error = 'Only the super manager can add or update marks.');
+      return;
+    }
     final results = <TestResultModel>[];
 
     for (final student in _students) {
@@ -135,6 +140,8 @@ class _TestResultEntryScreenState extends State<TestResultEntryScreen> {
                 children: [
                   Text('Subject: ${widget.test.subject}'),
                   Text('Max Marks: ${widget.test.maxMarks}'),
+                  if (widget.test.isFinalExam)
+                    const Text('Final / Yearly Exam'),
                   Text('Date: ${widget.test.date.toLocal().toString().split(' ')[0]}'),
                   const SizedBox(height: 12),
                   if (_error != null)

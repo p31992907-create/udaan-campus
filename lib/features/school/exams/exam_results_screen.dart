@@ -27,6 +27,8 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
   List<Student> _students = [];
   List<TestResultModel> _results = [];
   Student? _selectedStudent;
+  int? _selectedPosition;
+  bool _positionReady = false;
 
   @override
   void initState() {
@@ -52,22 +54,34 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
     try {
       if (user.role == UserRole.student) {
         final student = await _attendanceService.getStudentByEmail(user.email);
-        if (student != null) {
+        if (student != null &&
+            student.classId != null &&
+            student.section != null) {
+          final classId = student.classId!;
+          final section = student.section!;
           _selectedStudentId = student.id;
           _selectedStudent = student;
-          _selectedClassSection = '${student.classId}-${student.section}';
+          _selectedClassSection = '$classId-$section';
+          await _loadPositionForClassSection(classId, section);
           await _loadResults(student.id);
         }
       } else if (user.role == UserRole.parent) {
         final childIds = user.linkedChildren ?? [];
         if (childIds.isNotEmpty) {
           final children = await _attendanceService.getStudentsByIds(childIds);
-          if (children.isNotEmpty) {
+          final child = children.isNotEmpty ? children.first : null;
+          if (child != null && child.classId != null && child.section != null) {
+            final classId = child.classId!;
+            final section = child.section!;
             _students = children;
-            _selectedStudent = children.first;
-            _selectedStudentId = children.first.id;
-            _selectedClassSection = '${children.first.classId}-${children.first.section}';
-            await _loadResults(children.first.id);
+            _selectedStudent = child;
+            _selectedStudentId = child.id;
+            _selectedClassSection = '$classId-$section';
+            await _loadPositionForClassSection(
+              classId,
+              section,
+            );
+            await _loadResults(child.id);
           }
         }
       } else {
@@ -106,8 +120,54 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
         _selectedStudentId = students.first.id;
       }
     });
+    await _loadPositionForClassSection(classId, section);
     if (_selectedStudentId != null) {
       await _loadResults(_selectedStudentId!);
+    }
+  }
+
+  Future<void> _loadPositionForClassSection(String classId, String section) async {
+    final students = await _attendanceService.getStudentsForClassSection(
+      classId: classId,
+      section: section,
+    );
+    final finalResults = await _examService.fetchResultsForClassSection(
+      classId: classId,
+      section: section,
+    );
+    final resultsByStudent = <String, List<TestResultModel>>{};
+    for (final result in finalResults) {
+      resultsByStudent.putIfAbsent(result.studentId, () => []).add(result);
+    }
+    final complete = students.isNotEmpty &&
+        students.every((student) => resultsByStudent.containsKey(student.id));
+    if (!complete || _selectedStudentId == null) {
+      if (mounted) {
+        setState(() {
+          _positionReady = false;
+          _selectedPosition = null;
+        });
+      }
+      return;
+    }
+
+    final totals = <String, double>{
+      for (final student in students)
+        student.id: (resultsByStudent[student.id] ?? []).fold<double>(
+              0,
+              (sum, result) => sum + (result.maxMarks == 0
+                  ? 0
+                  : result.marksObtained / result.maxMarks),
+            ),
+    };
+    final orderedIds = totals.keys.toList()
+      ..sort((a, b) => totals[b]!.compareTo(totals[a]!));
+    final position = orderedIds.indexOf(_selectedStudentId!) + 1;
+    if (mounted) {
+      setState(() {
+        _positionReady = position > 0;
+        _selectedPosition = position > 0 ? position : null;
+      });
     }
   }
 
@@ -180,6 +240,8 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
           _selectedStudentId = null;
           _selectedStudent = null;
           _results = [];
+          _positionReady = false;
+          _selectedPosition = null;
         });
         await _loadStudentsForSection(value);
       },
@@ -224,6 +286,8 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
                             const SizedBox(height: 4),
                             Text('Class: ${_selectedStudent!.classId}-${_selectedStudent!.section}'),
                             Text('Roll No: ${_selectedStudent!.rollNumber}'),
+                            if (_positionReady && _selectedPosition != null)
+                              Text('Position in class: $_selectedPosition'),
                           ],
                         ),
                       ),

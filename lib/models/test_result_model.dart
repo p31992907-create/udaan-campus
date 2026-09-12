@@ -15,6 +15,7 @@ class TestResultModel {
   final String? remarks;
   final DateTime createdAt;
   final String createdBy;
+  final bool isFinalExam;
 
   TestResultModel({
     required this.resultId,
@@ -31,6 +32,7 @@ class TestResultModel {
     this.remarks,
     required this.createdAt,
     required this.createdBy,
+    this.isFinalExam = false,
   });
 
   factory TestResultModel.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,7 @@ class TestResultModel {
           ? (json['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
       createdBy: json['createdBy'] ?? '',
+      isFinalExam: json['isFinalExam'] == true,
     );
   }
 
@@ -69,6 +72,7 @@ class TestResultModel {
       'grade': grade,
       'createdAt': Timestamp.fromDate(createdAt),
       'createdBy': createdBy,
+      'isFinalExam': isFinalExam,
     };
     if (remarks != null) {
       data['remarks'] = remarks;
