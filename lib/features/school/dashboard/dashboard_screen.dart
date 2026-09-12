@@ -225,6 +225,12 @@ class TeacherDashboard extends StatelessWidget {
           onTap: () => Navigator.pushNamed(context, '/exam_management'),
         ),
         DashboardActionCard(
+          icon: Icons.picture_as_pdf,
+          title: 'Exam Papers',
+          subtitle: 'Upload and download paper PDFs.',
+          onTap: () => Navigator.pushNamed(context, '/exam_papers'),
+        ),
+        DashboardActionCard(
           icon: Icons.message,
           title: 'Messages',
           subtitle: 'Communicate with students and parents.',

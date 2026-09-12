@@ -129,6 +129,12 @@ service cloud.firestore {
       allow create, update, delete: if isSignedIn() && (isSuperManager() || isManager());
     }
 
+    match /exam_papers/{paperId} {
+      allow read: if isSignedIn() && (isSuperManager() || isManager() || isTeacher());
+      allow create: if isSignedIn() && (isSuperManager() || isTeacher());
+      allow update, delete: if isSignedIn() && (isSuperManager() || resource.data.uploadedBy == request.auth.uid);
+    }
+
     // Tests/results, calling_logs, audit_logs etc.
     match /{document=**} {
       allow read: if false;

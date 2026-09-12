@@ -12,6 +12,7 @@ import 'features/school/attendance/monthly_attendance_screen.dart';
 import 'features/school/attendance/absent_students_screen.dart';
 import 'features/school/exams/test_management_screen.dart';
 import 'features/school/exams/exam_results_screen.dart';
+import 'features/school/exams/exam_papers_screen.dart';
 import 'features/school/homework/homework_screen.dart';
 import 'features/school/student/student_portal_screen.dart';
 import 'features/school/student/student_qr_verification_screen.dart';
@@ -75,6 +76,7 @@ class _UdaanAppRouter extends StatelessWidget {
             '/absent_students': (context) => const AbsentStudentsScreen(),
             '/exam_management': (context) => const TestManagementScreen(),
             '/exam_results': (context) => const ExamResultsScreen(),
+            '/exam_papers': (context) => const ExamPapersScreen(),
             '/homework': (context) => const HomeworkScreen(),
             '/student_portal': (context) => const StudentPortalScreen(),
             '/student_qr_verify': (context) => const StudentQrVerificationScreen(),
