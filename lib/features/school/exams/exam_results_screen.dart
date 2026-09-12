@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:udaan_campus/models/student.dart';
 import 'package:udaan_campus/models/test_result_model.dart';
 import 'package:udaan_campus/models/user_role.dart';
+import 'package:udaan_campus/models/test_model.dart';
 import 'package:udaan_campus/services/attendance_service.dart';
 import 'package:udaan_campus/services/auth_provider.dart';
 import 'package:udaan_campus/services/exam_service.dart';
@@ -29,11 +30,26 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
   Student? _selectedStudent;
   int? _selectedPosition;
   bool _positionReady = false;
+  bool _savingMarks = false;
+  List<TestModel> _availableTests = [];
+  final Map<String, TextEditingController> _markControllers = {};
+  final Map<String, TextEditingController> _remarkControllers = {};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _initializeScreen());
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _markControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in _remarkControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   Future<void> _initializeScreen() async {
@@ -181,6 +197,7 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
       setState(() {
         _results = results;
       });
+      await _loadMarkEntryData(results);
     } catch (e) {
       setState(() {
         _error = 'Unable to load results for selected student.';
@@ -189,6 +206,96 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
       setState(() {
         _loadingResults = false;
       });
+    }
+  }
+
+  Future<void> _loadMarkEntryData(List<TestResultModel> results) async {
+      final user = Provider.of<AuthProvider>(context, listen: false).user;
+      if (user?.role != UserRole.superManager ||
+          _selectedStudent?.classId == null ||
+          _selectedStudent?.section == null) {
+        return;
+      }
+      final tests = await _examService.fetchTestsForClassSection(
+        classId: _selectedStudent!.classId!,
+        section: _selectedStudent!.section!,
+      );
+      final byTest = {
+        for (final result in results) result.testId: result,
+      };
+      for (final controller in _markControllers.values) {
+        controller.dispose();
+      }
+      for (final controller in _remarkControllers.values) {
+        controller.dispose();
+      }
+      _markControllers.clear();
+      _remarkControllers.clear();
+      for (final test in tests) {
+        final result = byTest[test.testId];
+        _markControllers[test.testId] = TextEditingController(
+          text: result == null ? '' : _formatMark(result.marksObtained),
+        );
+        _remarkControllers[test.testId] = TextEditingController(
+          text: result?.remarks ?? '',
+        );
+      }
+      if (mounted) {
+        setState(() => _availableTests = tests);
+      }
+    }
+
+  String _formatMark(double value) {
+      return value == value.roundToDouble()
+          ? value.toInt().toString()
+          : value.toString();
+    }
+
+  Future<void> _saveSelectedStudentMarks() async {
+      final user = Provider.of<AuthProvider>(context, listen: false).user;
+      final student = _selectedStudent;
+    if (user?.role != UserRole.superManager || student == null) return;
+      final results = <TestResultModel>[];
+      for (final test in _availableTests) {
+        final text = _markControllers[test.testId]?.text.trim() ?? '';
+        final marks = double.tryParse(text);
+        if (marks == null || marks < 0 || marks > test.maxMarks) {
+          setState(() => _error =
+              'Enter marks between 0 and ${test.maxMarks} for ${test.subject}.');
+          return;
+        }
+        final remarks = _remarkControllers[test.testId]?.text.trim();
+        results.add(TestResultModel(
+          resultId: TestResultModel.buildResultId(test.testId, student.id),
+          testId: test.testId,
+          testTitle: test.title,
+          subject: test.subject,
+          studentId: student.id,
+          studentName: student.name,
+          classId: test.classId,
+          section: test.section,
+          marksObtained: marks,
+          maxMarks: test.maxMarks,
+          grade: _examService.calculateGrade(marks, test.maxMarks),
+          remarks: remarks == null || remarks.isEmpty ? null : remarks,
+          createdAt: DateTime.now(),
+          createdBy: user!.uid,
+          isFinalExam: test.isFinalExam,
+        ));
+      }
+    setState(() => _savingMarks = true);
+    try {
+      await _examService.saveTestResults(results, user!.uid, user.role);
+      await _loadResults(student.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Student marks saved.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Unable to save student marks.');
+    } finally {
+      if (mounted) setState(() => _savingMarks = false);
     }
   }
 
@@ -298,10 +405,64 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
                         ),
                       ),
                     ),
+                  if (_availableTests.isNotEmpty &&
+                      Provider.of<AuthProvider>(context).user?.role ==
+                          UserRole.superManager) ...[
+                    const SizedBox(height: 12),
+                    _buildMarkEntrySection(),
+                  ],
                   const SizedBox(height: 16),
                   Expanded(child: _buildResultsSection()),
                 ],
               ),
+      ),
+    );
+  }
+
+  Widget _buildMarkEntrySection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Enter marks for ${_selectedStudent!.name}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            ..._availableTests.map((test) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          '${test.subject} (${test.isFinalExam ? 'Final' : test.title})',
+                        ),
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: _markControllers[test.testId],
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: 'Marks / ${test.maxMarks}',
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+            FilledButton.icon(
+              onPressed: _savingMarks ? null : _saveSelectedStudentMarks,
+              icon: const Icon(Icons.save),
+              label: Text(_savingMarks ? 'Saving...' : 'Save marks'),
+            ),
+          ],
+        ),
       ),
     );
   }
