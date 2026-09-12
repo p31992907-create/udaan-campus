@@ -12,6 +12,7 @@ class Student {
   final String? section;
   final String? parentName;
   final String? parentPhone;
+  final String? phoneNumber;
   final String? qrToken;
   final bool active;
 
@@ -28,6 +29,7 @@ class Student {
     this.section,
     this.parentName,
     this.parentPhone,
+    this.phoneNumber,
     this.qrToken,
     this.active = true,
   });
@@ -46,6 +48,7 @@ class Student {
       section: json['section'] as String?,
       parentName: json['parentName'] as String?,
       parentPhone: json['parentPhone'] as String?,
+      phoneNumber: (json['phoneNumber'] ?? json['mobileNumber']) as String?,
       qrToken: json['qrToken'] as String?,
       active: json['active'] is bool ? json['active'] as bool : true,
     );
@@ -66,6 +69,7 @@ class Student {
     if (section != null) data['section'] = section;
     if (parentName != null) data['parentName'] = parentName;
     if (parentPhone != null) data['parentPhone'] = parentPhone;
+    if (phoneNumber != null) data['phoneNumber'] = phoneNumber;
     if (qrToken != null) data['qrToken'] = qrToken;
     data['active'] = active;
     return data;

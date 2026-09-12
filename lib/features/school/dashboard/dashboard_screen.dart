@@ -248,6 +248,12 @@ class ParentDashboard extends StatelessWidget {
       title: 'Parent Portal',
       description: 'Follow your child’s attendance, homework, and school announcements.',
       children: [
+        DashboardActionCard(
+          icon: Icons.verified_user,
+          title: 'My Student Portal',
+          subtitle: 'Verify your profile and view all live updates.',
+          onTap: () => Navigator.pushNamed(context, '/student_portal'),
+        ),
         const DashboardActionCard(
           icon: Icons.family_restroom,
           title: 'Child Attendance',

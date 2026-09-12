@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:udaan_campus/models/student.dart';
 import 'package:udaan_campus/services/attendance_service.dart';
 import 'package:udaan_campus/features/school/attendance/student_qr_screen.dart';
+import 'package:udaan_campus/services/auth_provider.dart';
+import 'package:udaan_campus/services/qr_service.dart';
+import 'package:provider/provider.dart';
 
 class QrStudentManagementScreen extends StatefulWidget {
   const QrStudentManagementScreen({super.key});
@@ -12,11 +15,13 @@ class QrStudentManagementScreen extends StatefulWidget {
 
 class _QrStudentManagementScreenState extends State<QrStudentManagementScreen> {
   final AttendanceService _attendanceService = AttendanceService();
+  final QrService _qrService = QrService();
   final TextEditingController _searchController = TextEditingController();
   List<Student> _students = [];
   List<Student> _filteredStudents = [];
   bool _loading = true;
   String? _error;
+  bool _generating = false;
 
   @override
   void initState() {
@@ -86,12 +91,51 @@ class _QrStudentManagementScreenState extends State<QrStudentManagementScreen> {
     );
   }
 
+  Future<void> _generateMissingCards() async {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    if (user == null) return;
+    setState(() => _generating = true);
+    try {
+      for (final student in _students) {
+        if (student.qrToken == null || student.qrToken!.isEmpty) {
+          await _qrService.ensureStudentQrToken(
+            studentId: student.id,
+            performedBy: user.uid,
+          );
+        }
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Missing student ID QRs generated.')),
+        );
+        await _loadStudents();
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Unable to generate student ID QRs.');
+      }
+    } finally {
+      if (mounted) setState(() => _generating = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('QR Student Management'),
         actions: [
+          IconButton(
+            icon: _generating
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.badge),
+            onPressed: _generating ? null : _generateMissingCards,
+            tooltip: 'Generate missing ID cards',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadStudents,

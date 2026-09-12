@@ -23,6 +23,12 @@ service cloud.firestore {
       return isSuperManager() || isManager() || getRoleFromClaims() == 'teacher';
     }
 
+    function isLinkedParent(studentId) {
+      return getRoleFromClaims() == 'parent' &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.linkedChildren != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.linkedChildren.hasAny([studentId]);
+    }
+
     // Users collection: only backend/admin (super_manager) may change roles and sensitive fields
     match /users/{userId} {
       allow read: if isSignedIn() && (
@@ -77,6 +83,7 @@ service cloud.firestore {
     match /students/{studentId} {
       allow read: if isSignedIn() && (
         isSuperManager() || isManager() || isTeacher() ||
+        isLinkedParent(studentId) ||
         request.auth.uid == resource.data.uid ||
         request.auth.token.email == resource.data.email
       );
@@ -101,6 +108,21 @@ service cloud.firestore {
       );
       allow create, update: if isSignedIn() && isSuperManager();
       allow delete: if isSignedIn() && isSuperManager();
+    }
+
+    match /notices/{noticeId} {
+      allow read: if isSignedIn() && resource.data.status == 'PUBLISHED';
+      allow write: if isSignedIn() && (isSuperManager() || isManager() || isTeacher());
+    }
+
+    match /school_timings/{timingId} {
+      allow read: if isSignedIn() && resource.data.status == 'PUBLISHED';
+      allow write: if isSignedIn() && (isSuperManager() || isManager());
+    }
+
+    match /student_qr_tokens/{token} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && (isSuperManager() || isManager());
     }
 
     // Tests/results, calling_logs, audit_logs etc.

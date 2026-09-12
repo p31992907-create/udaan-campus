@@ -13,6 +13,8 @@ import 'features/school/attendance/absent_students_screen.dart';
 import 'features/school/exams/test_management_screen.dart';
 import 'features/school/exams/exam_results_screen.dart';
 import 'features/school/homework/homework_screen.dart';
+import 'features/school/student/student_portal_screen.dart';
+import 'features/school/student/student_qr_verification_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,6 +76,8 @@ class _UdaanAppRouter extends StatelessWidget {
             '/exam_management': (context) => const TestManagementScreen(),
             '/exam_results': (context) => const ExamResultsScreen(),
             '/homework': (context) => const HomeworkScreen(),
+            '/student_portal': (context) => const StudentPortalScreen(),
+            '/student_qr_verify': (context) => const StudentQrVerificationScreen(),
           },
         );
       },
