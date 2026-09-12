@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/app_user.dart';
 import '../models/user_role.dart';
 import 'user_repository.dart';
+import 'external_backend_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final UserRepository _userRepository = UserRepository();
+  final ExternalBackendService _externalBackend = ExternalBackendService();
 
   AppUser? _user;
   AppUser? get user => _user;
@@ -28,6 +31,15 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return;
+    }
+
+    try {
+      await _externalBackend.syncUser(
+        displayName: firebaseUser.displayName ?? '',
+        email: firebaseUser.email ?? '',
+      );
+    } catch (error, stackTrace) {
+      debugPrint('External user sync failed: $error\n$stackTrace');
     }
 
     final userProfile = await _userRepository.fetchUser(firebaseUser.uid);
