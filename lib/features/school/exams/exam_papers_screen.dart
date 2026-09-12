@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:udaan_campus/models/user_role.dart';
 import 'package:udaan_campus/services/auth_provider.dart';
-import 'package:udaan_campus/services/homework_storage_service.dart';
+import 'package:udaan_campus/services/supabase_paper_storage_service.dart';
 
 class ExamPapersScreen extends StatefulWidget {
   const ExamPapersScreen({super.key});
@@ -17,7 +17,7 @@ class ExamPapersScreen extends StatefulWidget {
 }
 
 class _ExamPapersScreenState extends State<ExamPapersScreen> {
-  final _storage = HomeworkStorageService();
+  final _storage = SupabasePaperStorageService();
   final _papers = FirebaseFirestore.instance.collection('exam_papers');
   bool _uploading = false;
 
@@ -29,7 +29,7 @@ class _ExamPapersScreenState extends State<ExamPapersScreen> {
     }
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf'],
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
     );
     if (result.isEmpty || result.first.path == null) return;
     final selected = result.first;
@@ -45,10 +45,17 @@ class _ExamPapersScreenState extends State<ExamPapersScreen> {
     setState(() => _uploading = true);
     try {
       final doc = _papers.doc();
-      final path = 'exam_papers/${user.uid}/${doc.id}.pdf';
-      final url = await _storage.uploadHomeworkAttachment(
-        storagePath: path,
+      final extension = selected.extension?.toLowerCase() ?? 'pdf';
+      final path = '${user.uid}/${doc.id}.$extension';
+      final contentType = extension == 'pdf'
+          ? 'application/pdf'
+          : extension == 'png'
+              ? 'image/png'
+              : 'image/jpeg';
+      final url = await _storage.uploadPaper(
+        path: path,
         file: file,
+        contentType: contentType,
       );
       await doc.set({
         'paperId': doc.id,
@@ -57,6 +64,7 @@ class _ExamPapersScreenState extends State<ExamPapersScreen> {
         'storagePath': path,
         'uploadedBy': user.uid,
         'uploadedByRole': user.role,
+        'sourceType': extension == 'pdf' ? 'PDF' : 'IMAGE',
         'ocrStatus': 'REVIEW_REQUIRED',
         'createdAt': FieldValue.serverTimestamp(),
       });
@@ -124,9 +132,11 @@ class _ExamPapersScreenState extends State<ExamPapersScreen> {
                 subtitle: Text('OCR: $status'),
                 trailing: IconButton(
                   icon: const Icon(Icons.download),
-                  onPressed: () {
+                  onPressed: () async {
                     final url = data['downloadUrl'] as String?;
-                    if (url != null) launchUrlString(url);
+                    if (url != null) {
+                      await launchUrlString(url);
+                    }
                   },
                 ),
               );
