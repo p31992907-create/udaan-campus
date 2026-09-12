@@ -25,13 +25,14 @@ class _HomeworkSubmissionScreenState extends State<HomeworkSubmissionScreen> {
   String? _error;
 
   Future<void> _pickSubmissionAttachment() async {
+    // file_picker still requires this flag for multi-file selection.
+    // ignore: deprecated_member_use
     final result = await FilePicker.pickFiles(allowMultiple: true);
-    if (result == null) return;
     if (!mounted) return;
 
     final userUid = Provider.of<AuthProvider>(context, listen: false).user?.uid ?? 'unknown';
-    for (final file in result.files) {
-      if (!_homeworkService.validateFileSize(file)) {
+    for (final file in result) {
+      if (!await _homeworkService.validateFileSize(file)) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('File is too large.')));
         continue;
@@ -44,13 +45,14 @@ class _HomeworkSubmissionScreenState extends State<HomeworkSubmissionScreen> {
         widget.homework.homeworkId,
         (progress) {},
       );
+      final fileSize = await file.length();
       if (!mounted) return;
       setState(() {
         _attachments.add(HomeworkAttachment(
           filePath: file.path!,
           fileName: file.name,
           fileType: file.extension ?? 'unknown',
-          fileSize: file.size,
+          fileSize: fileSize,
           fileUrl: fileUrl,
         ));
       });

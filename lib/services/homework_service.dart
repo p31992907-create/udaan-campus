@@ -244,7 +244,7 @@ class HomeworkService {
     };
   }
 
-  bool validateFileSize(PlatformFile file) {
-    return file.size <= maxAttachmentBytes;
+  Future<bool> validateFileSize(PlatformFile file) async {
+    return await file.length() <= maxAttachmentBytes;
   }
 }
