@@ -121,7 +121,11 @@ service cloud.firestore {
     }
 
     match /student_qr_tokens/{token} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && (
+        isSuperManager() || isManager() || isTeacher() ||
+        request.auth.uid == get(/databases/$(database)/documents/students/$(resource.data.studentId)).data.uid ||
+        isLinkedParent(resource.data.studentId)
+      );
       allow create, update, delete: if isSignedIn() && (isSuperManager() || isManager());
     }
 

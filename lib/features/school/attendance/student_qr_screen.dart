@@ -147,8 +147,12 @@ class _StudentQrScreenState extends State<StudentQrScreen> {
                                         : const Text('QR token unavailable', textAlign: TextAlign.center),
                                   ),
                                   const SizedBox(height: 20),
-                                  if (_qrToken != null)
-                                    Center(child: SelectableText(_qrToken!, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold))),
+                                  const Center(
+                                    child: Text(
+                                      'Keep this QR private. It is used for attendance and verified access.',
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),

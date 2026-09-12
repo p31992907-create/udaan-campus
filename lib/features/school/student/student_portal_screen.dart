@@ -5,6 +5,7 @@ import 'package:udaan_campus/models/student.dart';
 import 'package:udaan_campus/services/attendance_service.dart';
 import 'package:udaan_campus/services/auth_provider.dart';
 import 'package:udaan_campus/features/school/student/student_qr_verification_screen.dart';
+import 'package:udaan_campus/models/user_role.dart';
 
 class StudentPortalScreen extends StatefulWidget {
   const StudentPortalScreen({super.key});
@@ -20,6 +21,7 @@ class _StudentPortalScreenState extends State<StudentPortalScreen> {
   final _mobileController = TextEditingController();
   final _attendanceService = AttendanceService();
   Student? _student;
+  List<Student> _linkedChildren = [];
   bool _verified = false;
   bool _loading = true;
   String? _error;
@@ -49,7 +51,15 @@ class _StudentPortalScreenState extends State<StudentPortalScreen> {
     }
 
     try {
-      final student = await _attendanceService.getStudentByEmail(user.email);
+      Student? student;
+      if (user.role == UserRole.parent &&
+          (user.linkedChildren?.isNotEmpty ?? false)) {
+        _linkedChildren =
+            await _attendanceService.getStudentsByIds(user.linkedChildren!);
+        student = _linkedChildren.isEmpty ? null : _linkedChildren.first;
+      } else {
+        student = await _attendanceService.getStudentByEmail(user.email);
+      }
       if (!mounted) return;
       setState(() {
         _student = student;
@@ -65,6 +75,17 @@ class _StudentPortalScreenState extends State<StudentPortalScreen> {
         _error = 'Unable to load student profile.';
       });
     }
+
+  }
+
+  void _selectChild(String? studentId) {
+    if (studentId == null) return;
+    final selected = _linkedChildren.firstWhere((child) => child.id == studentId);
+    setState(() {
+      _student = selected;
+      _verified = false;
+      _error = null;
+    });
   }
 
   Future<void> _scanStudentCard() async {
@@ -205,6 +226,23 @@ class _StudentPortalScreenState extends State<StudentPortalScreen> {
             isThreeLine: true,
           ),
         ),
+        if (_linkedChildren.length > 1) ...[
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: student.id,
+            decoration: const InputDecoration(
+              labelText: 'Select child',
+              border: OutlineInputBorder(),
+            ),
+            items: _linkedChildren
+                .map((child) => DropdownMenuItem(
+                      value: child.id,
+                      child: Text(child.name),
+                    ))
+                .toList(),
+            onChanged: _selectChild,
+          ),
+        ],
         const SizedBox(height: 12),
         _actionTile(
           icon: Icons.assignment,
