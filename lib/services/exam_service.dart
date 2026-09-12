@@ -133,12 +133,11 @@ class ExamService {
   }
 
   Future<List<TestResultModel>> fetchResultsForStudent(String studentId) async {
-    final query = await testResults
-        .where('studentId', isEqualTo: studentId)
-        .orderBy('createdAt', descending: true)
-        .get();
-    return query.docs
+    final query = await testResults.where('studentId', isEqualTo: studentId).get();
+    final results = query.docs
         .map((doc) => TestResultModel.fromJson(doc.data()))
         .toList();
+    results.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return results;
   }
 }

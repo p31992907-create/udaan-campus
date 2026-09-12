@@ -18,6 +18,9 @@ class AttendanceService {
   CollectionReference<Map<String, dynamic>> get usersCollection =>
       _firestore.collection('users');
 
+  CollectionReference<Map<String, dynamic>> get classesCollection =>
+      _firestore.collection('classes');
+
   Future<List<String>> getAssignedClassSections({
     required String userUid,
     required String role,
@@ -34,12 +37,12 @@ class AttendanceService {
           : [];
     }
 
-    final query = await studentsCollection.get();
+    final query = await classesCollection.get();
     final sections = <String>{};
     for (final doc in query.docs) {
-      final student = doc.data();
-      final classId = student['classId'] as String?;
-      final section = student['section'] as String?;
+      final classData = doc.data();
+      final classId = classData['classId'] as String?;
+      final section = classData['section'] as String?;
       if (classId != null && section != null) {
         sections.add('$classId-$section');
       }
@@ -54,15 +57,16 @@ class AttendanceService {
     final query = await studentsCollection
         .where('classId', isEqualTo: classId)
         .where('section', isEqualTo: section)
-        .orderBy('rollNumber')
         .get();
-    return query.docs
+    final students = query.docs
         .map((doc) {
           final json = Map<String, dynamic>.from(doc.data());
           json['id'] = doc.id;
           return Student.fromJson(json);
         })
         .toList();
+    students.sort((a, b) => a.rollNumber.compareTo(b.rollNumber));
+    return students;
   }
 
   Future<Student?> getStudentByEmail(String email) async {
