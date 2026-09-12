@@ -211,6 +211,12 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
           _selectedStudentId = value;
           _selectedStudent = selected;
         });
+        if (selected.classId != null && selected.section != null) {
+          await _loadPositionForClassSection(
+            selected.classId!,
+            selected.section!,
+          );
+        }
         await _loadResults(value);
       },
       decoration: const InputDecoration(
