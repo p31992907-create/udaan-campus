@@ -42,7 +42,10 @@ class AttendanceService {
       final assignedSections =
           assigned is List ? assigned.whereType<String>().toSet() : <String>{};
       final entry = classId != null && section != null ? '$classId-$section' : null;
+      final hasAssignmentMetadata =
+          assignedSections.isNotEmpty || teacherIds.isNotEmpty;
       final teacherCanAccess = role != 'teacher' ||
+          !hasAssignmentMetadata ||
           assignedSections.contains(entry) ||
           teacherIds.contains(userUid);
       if (entry != null && teacherCanAccess) {
