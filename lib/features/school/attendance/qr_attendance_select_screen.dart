@@ -45,7 +45,10 @@ class _QrAttendanceSelectScreenState extends State<QrAttendanceSelectScreen> {
 
     try {
       if (UserRole.isTeacher(user.role)) {
-        final assigned = user.assignedClassSections ?? [];
+        final assigned = await _attendanceService.getAssignedClassSections(
+          userUid: user.uid,
+          role: user.role,
+        );
         setState(() {
           _classSectionOptions = assigned;
           if (assigned.length == 1) {
