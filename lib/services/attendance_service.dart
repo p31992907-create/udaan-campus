@@ -106,12 +106,15 @@ class AttendanceService {
   }) async {
     final query = await attendanceCollection
         .where('classId', isEqualTo: classId)
-        .where('section', isEqualTo: section)
-        .where('date', isEqualTo: Timestamp.fromDate(DateTime(date.year, date.month, date.day)))
         .get();
 
     return query.docs
         .map((doc) => AttendanceModel.fromJson(doc.data()))
+        .where((record) =>
+            record.section == section &&
+            record.date.year == date.year &&
+            record.date.month == date.month &&
+            record.date.day == date.day)
         .toList();
   }
 

@@ -115,21 +115,21 @@ class ExamService {
     final query = await tests
         .where('classId', isEqualTo: classId)
         .where('section', isEqualTo: section)
-        .orderBy('date', descending: true)
         .get();
-    return query.docs
+    final results = query.docs
         .map((doc) => TestModel.fromJson(doc.data()))
         .toList();
+    results.sort((a, b) => b.date.compareTo(a.date));
+    return results;
   }
 
   Future<List<TestResultModel>> fetchResultsForTest(String testId) async {
-    final query = await testResults
-        .where('testId', isEqualTo: testId)
-        .orderBy('studentName')
-        .get();
-    return query.docs
+    final query = await testResults.where('testId', isEqualTo: testId).get();
+    final results = query.docs
         .map((doc) => TestResultModel.fromJson(doc.data()))
         .toList();
+    results.sort((a, b) => a.studentName.compareTo(b.studentName));
+    return results;
   }
 
   Future<List<TestResultModel>> fetchResultsForStudent(String studentId) async {

@@ -80,7 +80,20 @@ class DashboardShell extends StatelessWidget {
                   subtitle: Text('Role: ${user.role}'),
                 ),
               ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              const Card(
+                child: ListTile(
+                  leading: Icon(Icons.info_outline),
+                  title: Text('About Udaan Academy'),
+                  subtitle: Text(
+                    'Developed by Udaan Academy (Umesh Sharma)\n'
+                    'Mobile: 9785705358\n'
+                    'Address: Bharatpur, Rajasthan',
+                  ),
+                  isThreeLine: true,
+                ),
+              ),
+              const SizedBox(height: 16),
             Expanded(
               child: GridView.count(
                 crossAxisCount: MediaQuery.of(context).size.width > 700 ? 3 : 1,
@@ -242,6 +255,12 @@ class TeacherDashboard extends StatelessWidget {
           title: 'Assessments',
           subtitle: 'Publish tests and record student scores.',
           onTap: () => Navigator.pushNamed(context, '/exam_management'),
+        ),
+        DashboardActionCard(
+          icon: Icons.assessment,
+          title: 'Class Marksheets',
+          subtitle: 'Review marks and results for your assigned class.',
+          onTap: () => Navigator.pushNamed(context, '/exam_results'),
         ),
         DashboardActionCard(
           icon: Icons.picture_as_pdf,
