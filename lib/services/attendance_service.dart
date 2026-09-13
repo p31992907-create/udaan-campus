@@ -26,25 +26,27 @@ class AttendanceService {
     required String role,
   }) async {
     final userSnapshot = await usersCollection.doc(userUid).get();
-    if (!userSnapshot.exists || userSnapshot.data() == null) {
-      return [];
-    }
-
-    final data = userSnapshot.data()!;
-    if (role == 'teacher') {
-      return data['assignedClassSections'] != null
-          ? List<String>.from(data['assignedClassSections'] as List<dynamic>)
-          : [];
-    }
-
+    final userData = userSnapshot.data() ?? <String, dynamic>{};
     final query = await classesCollection.get();
     final sections = <String>{};
     for (final doc in query.docs) {
       final classData = doc.data();
-      final classId = classData['classId'] as String?;
+      final classId = (classData['classId'] ?? doc.id) as String?;
       final section = classData['section'] as String?;
-      if (classId != null && section != null) {
-        sections.add('$classId-$section');
+      final teacherIds = [
+        classData['teacherUid'],
+        classData['teacherId'],
+        classData['assignedTeacherUid'],
+      ].whereType<String>().toSet();
+      final assigned = userData['assignedClassSections'] ?? classData['assignedClassSections'];
+      final assignedSections =
+          assigned is List ? assigned.whereType<String>().toSet() : <String>{};
+      final entry = classId != null && section != null ? '$classId-$section' : null;
+      final teacherCanAccess = role != 'teacher' ||
+          assignedSections.contains(entry) ||
+          teacherIds.contains(userUid);
+      if (entry != null && teacherCanAccess) {
+        sections.add(entry);
       }
     }
     return sections.toList()..sort();

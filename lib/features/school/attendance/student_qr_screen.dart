@@ -5,6 +5,7 @@ import 'package:udaan_campus/models/student.dart';
 import 'package:udaan_campus/services/qr_service.dart';
 import 'package:udaan_campus/services/auth_provider.dart';
 import 'package:udaan_campus/models/user_role.dart';
+import 'package:share_plus/share_plus.dart';
 
 class StudentQrScreen extends StatefulWidget {
   const StudentQrScreen({super.key, required this.studentId});
@@ -66,6 +67,7 @@ class _StudentQrScreenState extends State<StudentQrScreen> {
       return;
     }
 
+
     setState(() {
       _regenerating = true;
       _error = null;
@@ -83,12 +85,29 @@ class _StudentQrScreenState extends State<StudentQrScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('QR token regenerated successfully.')));
       }
+
     } catch (e) {
       setState(() {
         _error = 'Unable to regenerate QR token.';
         _regenerating = false;
       });
     }
+  }
+
+  Future<void> _shareCard() async {
+    final student = _student;
+    final token = _qrToken;
+    if (student == null || token == null) return;
+    await SharePlus.instance.share(
+      ShareParams(
+        subject: 'Udaan Campus student ID card',
+        text: 'Udaan Campus Student ID Card\n'
+            'Name: ${student.name}\n'
+            'Roll No: ${student.rollNumber}\n'
+            'Class: ${student.classId ?? 'N/A'} - ${student.section ?? 'N/A'}\n'
+            'QR token: $token',
+      ),
+    );
   }
 
   @override
@@ -129,6 +148,12 @@ class _StudentQrScreenState extends State<StudentQrScreen> {
                                   Center(child: Text('Section: ${_student!.section ?? 'N/A'}', style: const TextStyle(fontSize: 16))),
                                   const SizedBox(height: 4),
                                   Center(child: Text('Roll No: ${_student!.rollNumber}', style: const TextStyle(fontSize: 16))),
+                                  const SizedBox(height: 4),
+                                  Center(child: Text('Father: ${_student!.fatherName ?? 'N/A'}')),
+                                  const SizedBox(height: 4),
+                                  Center(child: Text('Mother: ${_student!.motherName ?? 'N/A'}')),
+                                  const SizedBox(height: 4),
+                                  Center(child: Text('Mobile: ${_student!.phoneNumber ?? 'N/A'}')),
                                   const SizedBox(height: 12),
                                   const Divider(),
                                   const SizedBox(height: 12),
@@ -146,6 +171,16 @@ class _StudentQrScreenState extends State<StudentQrScreen> {
                                           )
                                         : const Text('QR token unavailable', textAlign: TextAlign.center),
                                   ),
+                                  if (_student!.principalSignatureUrl != null) ...[
+                                    const SizedBox(height: 12),
+                                    Image.network(
+                                      _student!.principalSignatureUrl!,
+                                      height: 40,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const SizedBox.shrink(),
+                                    ),
+                                    const Center(child: Text('Principal')),
+                                  ],
                                   const SizedBox(height: 20),
                                   const Center(
                                     child: Text(
@@ -171,8 +206,8 @@ class _StudentQrScreenState extends State<StudentQrScreen> {
                           ),
                           const SizedBox(height: 12),
                           ElevatedButton(
-                            onPressed: _qrToken == null ? null : () {},
-                            child: const Text('Share QR'),
+                            onPressed: _qrToken == null ? null : _shareCard,
+                            child: const Text('Share ID Card'),
                           ),
                         ],
                       ),

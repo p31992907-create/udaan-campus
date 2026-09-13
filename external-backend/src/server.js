@@ -107,6 +107,31 @@ app.post('/v1/parent-links', requireAuth, requireManager, asyncRoute(async (req,
   return res.status(201).json({ ok: true, linkId });
 }));
 
+app.post('/v1/parent-accounts', requireAuth, requireManager, asyncRoute(async (req, res) => {
+  const { email, password, displayName, linkedChildren } = req.body || {};
+  if (typeof email !== 'string' || typeof password !== 'string' ||
+      typeof displayName !== 'string' || !email || password.length < 8 ||
+      !Array.isArray(linkedChildren) || linkedChildren.length === 0) {
+    return res.status(400).json({
+      error: 'email, displayName, password (8+ chars), and linkedChildren are required',
+    });
+  }
+  const created = await admin.auth().createUser({ email, password, displayName });
+  await admin.auth().setCustomUserClaims(created.uid, { role: 'parent' });
+  await db.collection('users').doc(created.uid).set({
+    uid: created.uid,
+    email,
+    displayName,
+    role: 'parent',
+    normalizedRole: 'parent',
+    linkedChildren,
+    createdBy: req.user.uid,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  return res.status(201).json({ ok: true, uid: created.uid, email });
+}));
+
 app.use((error, _req, res, _next) => {
   if (error instanceof SyntaxError && error.status === 400) {
     return res.status(400).json({ error: 'Invalid JSON body' });

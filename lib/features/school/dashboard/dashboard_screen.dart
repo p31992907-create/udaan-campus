@@ -163,6 +163,19 @@ class ManagerDashboard extends StatelessWidget {
           icon: Icons.people,
           title: 'User Management',
           subtitle: 'Add or update teachers, parents and students.',
+          onTap: () => Navigator.pushNamed(context, '/create_parent_account'),
+        ),
+        DashboardActionCard(
+          icon: Icons.badge,
+          title: 'Student ID Cards',
+          subtitle: 'Create QR ID cards with family details.',
+          onTap: () => Navigator.pushNamed(context, '/attendance_home'),
+        ),
+        DashboardActionCard(
+          icon: Icons.family_restroom,
+          title: 'Create Parent Account',
+          subtitle: 'Create a parent login and link a student.',
+          onTap: () => Navigator.pushNamed(context, '/create_parent_account'),
         ),
         DashboardActionCard(
           icon: Icons.class_,
@@ -191,6 +204,12 @@ class ManagerDashboard extends StatelessWidget {
           title: 'Reports',
           subtitle: 'Review performance, logs, and audit activities.',
           onTap: () => Navigator.pushNamed(context, '/exam_results'),
+        ),
+        DashboardActionCard(
+          icon: Icons.picture_as_pdf,
+          title: 'Exam Papers',
+          subtitle: 'Upload and download paper PDFs.',
+          onTap: () => Navigator.pushNamed(context, '/exam_papers'),
         ),
       ],
     );

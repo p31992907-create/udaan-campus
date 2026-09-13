@@ -12,6 +12,9 @@ class Student {
   final String? section;
   final String? parentName;
   final String? parentPhone;
+  final String? fatherName;
+  final String? motherName;
+  final String? principalSignatureUrl;
   final String? phoneNumber;
   final String? qrToken;
   final bool active;
@@ -29,6 +32,9 @@ class Student {
     this.section,
     this.parentName,
     this.parentPhone,
+    this.fatherName,
+    this.motherName,
+    this.principalSignatureUrl,
     this.phoneNumber,
     this.qrToken,
     this.active = true,
@@ -48,6 +54,9 @@ class Student {
       section: json['section'] as String?,
       parentName: json['parentName'] as String?,
       parentPhone: json['parentPhone'] as String?,
+      fatherName: (json['fatherName'] ?? json['parentName']) as String?,
+      motherName: json['motherName'] as String?,
+      principalSignatureUrl: json['principalSignatureUrl'] as String?,
       phoneNumber: (json['phoneNumber'] ?? json['mobileNumber']) as String?,
       qrToken: json['qrToken'] as String?,
       active: json['active'] is bool ? json['active'] as bool : true,
@@ -69,6 +78,11 @@ class Student {
     if (section != null) data['section'] = section;
     if (parentName != null) data['parentName'] = parentName;
     if (parentPhone != null) data['parentPhone'] = parentPhone;
+    if (fatherName != null) data['fatherName'] = fatherName;
+    if (motherName != null) data['motherName'] = motherName;
+    if (principalSignatureUrl != null) {
+      data['principalSignatureUrl'] = principalSignatureUrl;
+    }
     if (phoneNumber != null) data['phoneNumber'] = phoneNumber;
     if (qrToken != null) data['qrToken'] = qrToken;
     data['active'] = active;

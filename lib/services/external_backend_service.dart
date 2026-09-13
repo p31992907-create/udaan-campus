@@ -43,6 +43,27 @@ class ExternalBackendService {
     return linkId;
   }
 
+  Future<String> createParentAccount({
+    required String email,
+    required String password,
+    required String displayName,
+    required List<String> linkedChildren,
+  }) async {
+    final response = await _authorizedPost('/v1/parent-accounts', {
+      'email': email,
+      'password': password,
+      'displayName': displayName,
+      'linkedChildren': linkedChildren,
+    });
+    _requireSuccess(response, 'Parent account creation failed');
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final uid = data['uid'];
+    if (uid is! String || uid.isEmpty) {
+      throw const FormatException('Parent account response did not include uid');
+    }
+    return uid;
+  }
+
   Future<http.Response> _authorizedPost(
     String path,
     Map<String, dynamic> body,
@@ -55,7 +76,6 @@ class ExternalBackendService {
     if (token == null || token.isEmpty) {
       throw StateError('Firebase ID token is unavailable');
     }
-
     return _client
         .post(
           Uri.parse('$baseUrl$path'),
@@ -69,15 +89,13 @@ class ExternalBackendService {
   }
 
   void _requireSuccess(http.Response response, String operation) {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return;
-    }
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
     String detail = response.body;
     try {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       detail = data['error']?.toString() ?? detail;
     } catch (_) {
-      // Preserve the raw response when the backend does not return JSON.
+      // Preserve raw response when the backend does not return JSON.
     }
     throw StateError('$operation (${response.statusCode}): $detail');
   }

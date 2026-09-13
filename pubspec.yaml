@@ -69,6 +69,7 @@ dependencies:
   
   # Mobile utilities
   url_launcher: ^6.3.2
+  share_plus: ^13.3.0
   mobile_scanner: ^7.4.0
   qr_flutter: ^4.1.0
   record: ^7.1.1
